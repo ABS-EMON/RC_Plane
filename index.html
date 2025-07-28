@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC Plane Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-color: #1e293b;
+            --primary-color: #3b82f6;
+            --text-color: #ffffff;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            margin: 0;
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--primary-color), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--card-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #10b981;
+        }
+        
+        .status-text {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title h3 {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 16px;
+        }
+        
+        .data-item {
+            text-align: center;
+            padding: 10px;
+            min-width: 120px;
+        }
+        
+        .data-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            background: linear-gradient(90deg, var(--primary-color), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .data-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .small-card {
+            background-color: var(--card-color);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+        
+        .small-card:hover {
+            transform: scale(1.03);
+        }
+        
+        .small-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .small-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+        }
+        
+        .small-card-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .small-card-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .small-card-unit {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        .chart-container {
+            height: 200px;
+            width: 100%;
+        }
+        
+        .tab-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .tab-container.active {
+            display: block;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--card-color);
+            border-radius: 50px;
+            padding: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        .map-container {
+            height: 300px;
+            background-color: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        
+        .map-placeholder {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), #2563eb);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background-color: var(--card-color);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .settings-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .settings-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        
+        .gauge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--success) 0% 20%,
+                var(--warning) 20% 70%,
+                var(--danger) 70% 100%
+            );
+            -webkit-mask: radial-gradient(white 50%, transparent 51%);
+            mask: radial-gradient(white 50%, transparent 51%);
+        }
+        
+        .gauge-center {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: var(--card-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 20px;
+            border-top: 1px solid #334155;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+        
+        /* Added for prediction button */
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, var(--primary-color), #2563eb);
+            color: white;
+        }
+        
+        .location-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        
+        .predict-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .prediction-result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            background-color: #1e293b;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .risk-low {
+            color: #10b981;
+            border: 2px solid #10b981;
+        }
+        
+        .risk-medium {
+            color: #f59e0b;
+            border: 2px solid #f59e0b;
+        }
+        
+        .risk-high {
+            color: #ef4444;
+            border: 2px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ABS EMON RC Plane Tracker</h1>
+            <div class="status">
+                <div class="status-indicator" id="status-indicator"></div>
+                <span class="status-text" id="status-text">Connecting...</span>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="home">Home</div>
+            <div class="tab" data-tab="speed">Speed</div>
+            <div class="tab" data-tab="location">Location</div>
+            <div class="tab" data-tab="settings">Settings</div>
+        </div>
+        
+        <!-- Home Tab -->
+        <div class="tab-container active" id="home-tab">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+                            </svg>
+                        </div>
+                        <h3>Flight Position</h3>
+                    </div>
+                    <div class="status">
+                        <div class="status-indicator" id="gps-status"></div>
+                        <span class="status-text" id="gps-status-text">No GPS</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <div class="data-value" id="latitude-value">--</div>
+                        <div class="data-label">Latitude</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-value" id="longitude-value">--</div>
+                        <div class="data-label">Longitude</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid">
+                <div class="small-card">
+                    <div class="small-card-header">
+                        <div class="small-card-icon" style="background-color: #10b981;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 16l4 4 4-4"></path>
+                                <path d="M7 20V4"></path>
+                                <path d="M21 8l-4-4-4 4"></path>
+                                <path d="M17 4v16"></path>
+                            </svg>
+                        </div>
+                        <div class="small-card-title">Altitude</div>
+                    </div>
+                    <div class="small-card-value" id="altitude-value">--</div>
+                    <div class="small-card-unit">meters</div>
+                </div>
+                
+                <div class="small-card">
+                    <div class="small-card-header">
+                        <div class="small-card-icon" style="background-color: #f59e0b;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+                            </svg>
+                        </div>
+                        <div class="small-card-title">Satellites</div>
+                    </div>
+                    <div class="small-card-value" id="satellites-value">--</div>
+                    <div class="small-card-unit">connected</div>
+                </div>
+                
+                <div class="small-card">
+                    <div class="small-card-header">
+                        <div class="small-card-icon" style="background-color: #f97316;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+                            </svg>
+                        </div>
+                        <div class="small-card-title">HDOP</div>
+                    </div>
+                    <div class="small-card-value" id="hdop-value">--</div>
+                    <div class="small-card-unit">precision</div>
+                </div>
+                
+                <div class="small-card">
+                    <div class="small-card-header">
+                        <div class="small-card-icon" style="background-color: #ef4444;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="4" y1="12" x2="20" y2="12"></line>
+                                <line x1="4" y1="6" x2="20" y2="6"></line>
+                                <line x1="4" y1="18" x2="20" y2="18"></line>
+                            </svg>
+                        </div>
+                        <div class="small-card-title">Speed</div>
+                    </div>
+                    <div class="small-card-value" id="speed-value">--</div>
+                    <div class="small-card-unit">km/h</div>
+                </div>
+            </div>
+            
+            <!-- Added Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn refresh-btn" onclick="fetchData()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <button class="action-btn location-btn" onclick="openMaps()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    Location
+                </button>
+                <button class="action-btn predict-btn" onclick="predictRisk()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    Predict Risk
+                </button>
+            </div>
+            
+            <!-- Prediction Result -->
+            <div id="predictionResult" class="prediction-result">
+                Risk prediction will appear here
+            </div>
+        </div>
+        
+        <!-- Speed Tab -->
+        <div class="tab-container" id="speed-tab">
+            <div class="card">
+                <h3>Speed Monitor</h3>
+                <div style="text-align: center; margin: 20px 0;">
+                    <div class="gauge-container">
+                        <div class="gauge"></div>
+                        <div class="gauge-center">
+                            <div style="font-size: 32px; font-weight: bold; color: var(--primary-color);" id="speed-gauge-value">--</div>
+                            <div style="color: var(--text-secondary); font-size: 14px;">km/h</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-family: 'Poppins', sans-serif; font-weight: 500;">Current Speed</div>
+                    <div style="color: var(--text-secondary); font-size: 12px;" id="last-update">Updated: --</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Speed History</h3>
+                <div class="chart-container" id="speed-chart">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Location Tab -->
+        <div class="tab-container" id="location-tab">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <h3>GPS Coordinates</h3>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 12px;" id="location-update-time">--</div>
+                </div>
+                
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding: 12px; background: #0f172a; border-radius: 8px;">
+                        <span style="color: var(--text-secondary);">Latitude:</span>
+                        <span style="font-family: monospace; color: #3b82f6; font-weight: 500;" id="location-latitude">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #0f172a; border-radius: 8px;">
+                        <span style="color: var(--text-secondary);">Longitude:</span>
+                        <span style="font-family: monospace; color: #60a5fa; font-weight: 500;" id="location-longitude">--</span>
+                    </div>
+                </div>
+                
+                <button class="btn" id="open-maps-btn" style="margin-top: 24px;" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                        <line x1="8" y1="2" x2="8" y2="18"></line>
+                        <line x1="16" y1="6" x2="16" y2="22"></line>
+                    </svg>
+                    Open in Google Maps
+                </button>
+            </div>
+            
+            <div class="map-container">
+                <div class="no-data" id="map-placeholder">
+                    Waiting for GPS data...
+                </div>
+                <img src="" alt="Map" class="map-placeholder" id="map-image" style="display: none;">
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-container" id="settings-tab">
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-icon" style="background-color: #10b981;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">App Version</div>
+                        <div style="color: var(--text-secondary); font-size: 12px;">v2.1.0 (Build 45)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-icon" style="background-color: var(--primary-color);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">Auto Refresh</div>
+                        <div style="color: var(--text-secondary); font-size: 12px;">Every 15 seconds</div>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="auto-refresh-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-icon" style="background-color: var(--primary-color);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">Manual Refresh</div>
+                        <div style="color: var(--text-secondary); font-size: 12px;">Fetch latest data now</div>
+                    </div>
+                </div>
+                <button class="btn" style="width: auto; padding: 8px 16px;" id="refresh-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-icon" style="background-color: #8b5cf6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">Send Test Data</div>
+                        <div style="color: var(--text-secondary); font-size: 12px;">Insert sample data to server</div>
+                    </div>
+                </div>
+                <button class="btn" style="width: auto; padding: 8px 16px;" id="test-data-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-icon" style="background-color: #f59e0b;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <path d="M22 6l-10 7L2 6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">Server Configuration</div>
+                        <div style="color: var(--text-secondary); font-size: 12px;" id="server-url">ThingSpeak Channel 3008079</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            RC Plane Tracker v2.1.0 | Data last updated: <span id="last-updated-time">--</span>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const THINGSPEAK_CHANNEL_ID = '3008079';
+        const THINGSPEAK_API_KEY = 'XB7ZX13F9YWQMLSW';
+        const THINGSPEAK_URL = `https://api.thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}/feeds.json?api_key=${THINGSPEAK_API_KEY}&results=1`;
+        const PREDICTION_API = "http://localhost:8000/predict"; // Update if your backend is on a different host/port
+        
+        // State
+        let autoRefresh = true;
+        let refreshInterval = 15000; // 15 seconds (ThingSpeak free account limit)
+        let refreshTimer;
+        let speedHistory = [];
+        let speedChart;
+        
+        // DOM Elements
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const gpsStatus = document.getElementById('gps-status');
+        const gpsStatusText = document.getElementById('gps-status-text');
+        const latitudeValue = document.getElementById('latitude-value');
+        const longitudeValue = document.getElementById('longitude-value');
+        const altitudeValue = document.getElementById('altitude-value');
+        const satellitesValue = document.getElementById('satellites-value');
+        const hdopValue = document.getElementById('hdop-value');
+        const speedValue = document.getElementById('speed-value');
+        const speedGaugeValue = document.getElementById('speed-gauge-value');
+        const lastUpdate = document.getElementById('last-update');
+        const locationUpdateTime = document.getElementById('location-update-time');
+        const locationLatitude = document.getElementById('location-latitude');
+        const locationLongitude = document.getElementById('location-longitude');
+        const openMapsBtn = document.getElementById('open-maps-btn');
+        const mapImage = document.getElementById('map-image');
+        const mapPlaceholder = document.getElementById('map-placeholder');
+        const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const testDataBtn = document.getElementById('test-data-btn');
+        const lastUpdatedTime = document.getElementById('last-updated-time');
+        const predictionResult = document.getElementById('predictionResult');
+        
+        // Tab navigation
+        const tabs = document.querySelectorAll('.tab');
+        const tabContainers = document.querySelectorAll('.tab-container');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab containers
+                tabContainers.forEach(container => container.classList.remove('active'));
+                // Show the selected tab container
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+                
+                // If speed tab is selected, resize chart
+                if (tabId === 'speed' && speedChart) {
+                    setTimeout(() => {
+                        speedChart.resize();
+                    }, 100);
+                }
+            });
+        });
+        
+        // Initialize speed chart
+        function initSpeedChart() {
+            const chartDom = document.getElementById('speed-chart');
+            speedChart = echarts.init(chartDom);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: [],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#666'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#999'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 10,
+                    axisLine: {
+                        lineStyle: {
+                            color: '#666'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#999'
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    }
+                },
+                series: [{
+                    data: [],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#3b82f6',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#3b82f6'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(59, 130, 246, 0.3)'
+                            }, {
+                                offset: 1, color: 'rgba(59, 130, 246, 0)'
+                            }]
+                        }
+                    }
+                }]
+            };
+            
+            speedChart.setOption(option);
+        }
+        
+        // Update UI with data
+        function updateUI(data) {
+            if (!data || !data.feeds || data.feeds.length === 0) {
+                console.error('No data available');
+                statusIndicator.style.backgroundColor = '#ef4444';
+                statusText.textContent = 'No Data';
+                return;
+            }
+
+            const feed = data.feeds[0];
+            
+            // Update status
+            statusIndicator.style.backgroundColor = '#10b981';
+            statusText.textContent = 'Connected';
+            
+            // Update GPS status
+            if (feed.field1 && feed.field2) {
+                gpsStatus.style.backgroundColor = '#10b981';
+                gpsStatusText.textContent = 'GPS Active';
+            } else {
+                gpsStatus.style.backgroundColor = '#6b7280';
+                gpsStatusText.textContent = 'No GPS';
+            }
+            
+            // Update values with ThingSpeak field mapping
+            latitudeValue.textContent = feed.field1 ? parseFloat(feed.field1).toFixed(4) : '--';
+            longitudeValue.textContent = feed.field2 ? parseFloat(feed.field2).toFixed(4) : '--';
+            altitudeValue.textContent = feed.field5 ? parseFloat(feed.field5).toFixed(2) : '--';
+            satellitesValue.textContent = feed.field4 || '--';
+            hdopValue.textContent = feed.field6 ? parseFloat(feed.field6).toFixed(2) : '--';
+            speedValue.textContent = feed.field3 ? parseFloat(feed.field3).toFixed(2) : '--';
+            speedGaugeValue.textContent = feed.field3 ? parseFloat(feed.field3).toFixed(2) : '--';
+            
+            // Update location tab
+            locationLatitude.textContent = feed.field1 ? 
+                `${Math.abs(parseFloat(feed.field1)).toFixed(4)}°${parseFloat(feed.field1) >= 0 ? 'N' : 'S'}` : 
+                '--';
+            locationLongitude.textContent = feed.field2 ? 
+                `${Math.abs(parseFloat(feed.field2)).toFixed(4)}°${parseFloat(feed.field2) >= 0 ? 'E' : 'W'}` : 
+                '--';
+            
+            // Update map
+            if (feed.field1 && feed.field2) {
+                mapImage.src = `https://maps.googleapis.com/maps/api/staticmap?center=${feed.field1},${feed.field2}&zoom=14&size=600x300&maptype=hybrid&markers=color:red%7C${feed.field1},${feed.field2}&key=AIzaSyA0s1a7phLN0iaD6-UE7m4qP-z21pH0eSc`;
+                mapImage.style.display = 'block';
+                mapPlaceholder.style.display = 'none';
+                openMapsBtn.disabled = false;
+            } else {
+                mapImage.style.display = 'none';
+                mapPlaceholder.style.display = 'block';
+                openMapsBtn.disabled = true;
+            }
+            
+            // Update timestamps
+            const timestamp = feed.created_at ? new Date(feed.created_at) : new Date();
+            lastUpdate.textContent = `Updated ${formatTime(timestamp)}`;
+            locationUpdateTime.textContent = formatTime(timestamp);
+            lastUpdatedTime.textContent = formatTime(timestamp);
+            
+            // Update speed history for chart
+            if (feed.field3) {
+                const speed = parseFloat(feed.field3);
+                speedHistory.push(speed);
+                if (speedHistory.length > 10) {
+                    speedHistory.shift();
+                }
+                
+                // Update chart if initialized
+                if (speedChart) {
+                    speedChart.setOption({
+                        xAxis: {
+                            data: Array.from({length: speedHistory.length}, (_, i) => (i+1).toString())
+                        },
+                        series: [{
+                            data: speedHistory
+                        }]
+                    });
+                }
+            }
+        }
+        
+        // Format time for display
+        function formatTime(date) {
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // Open Google Maps
+        function openMaps() {
+            const latitude = document.getElementById('latitude-value').textContent;
+            const longitude = document.getElementById('longitude-value').textContent;
+            
+            if (latitude !== '--' && longitude !== '--') {
+                window.open(`https://maps.google.com/?q=${latitude},${longitude}`, '_blank');
+            }
+        }
+        
+        // Fetch data from ThingSpeak API
+        function fetchData() {
+            // Show loading state
+            statusIndicator.style.backgroundColor = '#f59e0b';
+            statusText.textContent = 'Fetching...';
+            
+            fetch(THINGSPEAK_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateUI(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    statusIndicator.style.backgroundColor = '#ef4444';
+                    statusText.textContent = 'Connection Error';
+                });
+        }
+        
+        // Predict risk level - UPDATED to fix "Method Not Allowed"
+        async function predictRisk() {
+            try {
+                // Show loading state
+                predictionResult.textContent = "Analyzing flight data...";
+                predictionResult.className = "prediction-result";
+                
+                // Fetch the latest data from ThingSpeak
+                const response = await fetch(THINGSPEAK_URL);
+                const data = await response.json();
+                
+                if (!data || !data.feeds || data.feeds.length === 0) {
+                    throw new Error('No data available for prediction');
+                }
+                
+                const feed = data.feeds[0];
+                
+                // Convert speed from km/h to mph (since model expects mph)
+                const speedKmh = parseFloat(feed.field3) || 0;
+                const speedMph = speedKmh * 0.621371;
+                
+                // Prepare data for prediction model
+                const inputData = {
+                    long: parseFloat(feed.field2) || 0,
+                    lat: parseFloat(feed.field1) || 0,
+                    alt: parseFloat(feed.field5) || 0,
+                    mph: speedMph,
+                    model: "737-7H4",
+                    reg_city: "DALLAS",
+                    reg_state: "TEXAS"
+                };
+                
+                // Send to prediction API with proper headers
+                const predictResponse = await fetch(PREDICTION_API, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(inputData)
+                });
+                
+                // Handle non-200 responses
+                if (!predictResponse.ok) {
+                    const errorText = await predictResponse.text();
+                    throw new Error(`API error: ${predictResponse.status} - ${errorText}`);
+                }
+                
+                const result = await predictResponse.json();
+                
+                // Display results with appropriate styling
+                const riskLevel = result.prediction;
+                predictionResult.textContent = `Risk Level: ${riskLevel}`;
+                
+                // Apply appropriate styling based on risk level
+                if (riskLevel.toLowerCase().includes('low')) {
+                    predictionResult.className = "prediction-result risk-low";
+                } else if (riskLevel.toLowerCase().includes('medium')) {
+                    predictionResult.className = "prediction-result risk-medium";
+                } else {
+                    predictionResult.className = "prediction-result risk-high";
+                }
+                
+            } catch (error) {
+                console.error("Prediction error:", error);
+                predictionResult.textContent = `Error: ${error.message}`;
+                predictionResult.className = "prediction-result risk-high";
+            }
+        }
+        
+        // Initialize auto refresh
+        function initAutoRefresh() {
+            if (autoRefresh) {
+                refreshTimer = setInterval(fetchData, refreshInterval);
+            }
+        }
+        
+        // Toggle auto refresh
+        function toggleAutoRefresh() {
+            autoRefresh = autoRefreshToggle.checked;
+            
+            if (autoRefresh) {
+                initAutoRefresh();
+            } else {
+                clearInterval(refreshTimer);
+            }
+        }
+        
+        // Event listeners
+        autoRefreshToggle.addEventListener('change', toggleAutoRefresh);
+        refreshBtn.addEventListener('click', fetchData);
+        testDataBtn.addEventListener('click', () => {
+            alert('Test data functionality is not available with ThingSpeak integration');
+        });
+        openMapsBtn.addEventListener('click', openMaps);
+        
+        // Initialize app
+        function init() {
+            initSpeedChart();
+            initAutoRefresh();
+            fetchData(); // Fetch initial data
+        }
+        
+        // Start the app
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
