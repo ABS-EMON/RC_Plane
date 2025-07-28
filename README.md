@@ -64,6 +64,7 @@ SkyLink AI collects live flight data such as speed, altitude, and GPS coordinate
 ![flo](https://github.com/user-attachments/assets/c496a0b0-2776-418f-bfe1-2787ed7e6214)
 <img width="461" height="368" alt="GPS" src="https://github.com/user-attachments/assets/6651835f-8bb3-4ef6-8f19-a10357b26f74" />
 
+<img width="1920" height="6543" alt="rc_image" src="https://github.com/user-attachments/assets/b128f32c-d6df-480d-b985-126b1be05ced" />
 
 
 
