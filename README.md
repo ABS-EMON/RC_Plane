@@ -12,7 +12,16 @@ A real-time IoT-based telemetry and AI-powered risk prediction system for a cust
 SkyLink AI collects live flight data such as speed, altitude, and GPS coordinates via ESP32 and NEO-6M GPS, then sends it to the cloud. A trained ML model hosted via FastAPI predicts whether the flight is currently **safe** or at **risk**, based on flight conditions. The results are visualized in both a **Flutter mobile app** and a **web dashboard**.
 
 ---
+## 📹 Video Presentation
 
+<p align="center">
+  <a href="https://youtu.be/WZZK0KcxGKY?si=8z3GlVLEiOAYxiYh">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://img.youtube.com/vi/WZZK0KcxGKY/maxresdefault.jpg">
+      <img src="https://img.youtube.com/vi/WZZK0KcxGKY/maxresdefault.jpg" alt="SkyLink AI Demo" width="100%" style="max-width: 800px; border-radius: 4px solid #555; border-radius: 12px;">
+    </picture>
+  </a>
+</p>
 ## 🎯 Key Features
 
 ### 📡 Real-Time Telemetry
@@ -31,6 +40,7 @@ SkyLink AI collects live flight data such as speed, altitude, and GPS coordinate
 - 💻 **Web Dashboard**: Real-time charts, Google Maps, risk alerts
 
 ---
+<img width="701" height="1041" alt="Web ML prediction" src="https://github.com/user-attachments/assets/dfe6390d-ef2b-401f-aa15-5043a28ddb07" />
 
 ## 📦 Hardware Components
 
